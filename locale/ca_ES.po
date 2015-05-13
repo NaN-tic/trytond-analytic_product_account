@@ -4,12 +4,12 @@ msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "error:product.kit.line:"
 msgid "You cannot delete component \"%s\" because it has associated costs."
-msgstr "No es pot eliminar el component \"%s\" perqu�� te costos associats."
+msgstr "No es pot eliminar el component \"%s\" perquè te costos associats."
 
 msgctxt "field:analytic_account.account,kit_line:"
 msgid "Kit Line"
-msgstr "L��nia de kit"
+msgstr "Línia de kit"
 
 msgctxt "field:product.kit.line,analytic_accounts:"
 msgid "Analytic Accounts"
-msgstr "Comptes anal��tics"
+msgstr "Comptes analítics"
