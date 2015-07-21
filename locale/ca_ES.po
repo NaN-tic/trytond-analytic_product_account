@@ -1,4 +1,4 @@
-# 
+#
 msgid ""
 msgstr "Content-Type: text/plain; charset=utf-8\n"
 
@@ -10,6 +10,33 @@ msgctxt "field:analytic_account.account,kit_line:"
 msgid "Kit Line"
 msgstr "Línia de kit"
 
+msgctxt "field:analytic_account.account,parent_kit_line:"
+msgid "Parent Kit Line"
+msgstr "Línia del kit pare"
+
 msgctxt "field:product.kit.line,analytic_accounts:"
 msgid "Analytic Accounts"
 msgstr "Comptes analítics"
+
+msgctxt "field:product.product,analytic_configured:"
+msgid "Analytic Configured"
+msgstr "Analítica configurada"
+
+msgctxt "field:product.product,parent_analytic_accounts:"
+msgid "Analytic Accounts"
+msgstr "Comptes analítics"
+
+msgctxt "field:product.template,create_analytic_by_reference:"
+msgid "Create Analytic By Reference"
+msgstr "Crea analítica des de la referència"
+
+msgctxt "field:product.template,parent_analytic_account:"
+msgid "Parent Analytic Account"
+msgstr "Compte analític pare"
+
+msgctxt "help:product.template,create_analytic_by_reference:"
+msgid ""
+"If marked an analytic account will be created for the parent product of the "
+"kit"
+msgstr ""
+"Si està marcat una compte analítica serà creada pel producte pare del kit"
