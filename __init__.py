@@ -8,4 +8,6 @@ def register():
     Pool.register(
         Account,
         ProductKitLine,
+        Template,
+        Product,
         module='analytic_product_account', type_='model')

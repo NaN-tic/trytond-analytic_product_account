@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<!-- The COPYRIGHT file at the top level of this repository contains the full
+     copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/notebook/page[@id='accounting']/group[@name='analytic_accounts']"
+            position="before">
+        <label name="parent_analytic_account"/>
+        <field name="parent_analytic_account"/>
+        <label name="create_analytic_by_reference"/>
+        <field name="create_analytic_by_reference"/>
+    </xpath>
+</data>

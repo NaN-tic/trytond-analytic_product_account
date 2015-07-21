@@ -1,16 +1,18 @@
 from trytond.model import fields
 from trytond.pool import Pool, PoolMeta
+from trytond.pyson import Eval, Bool
 from trytond.transaction import Transaction
 
 __metaclass__ = PoolMeta
 
-__all__ = ['Account', 'ProductKitLine']
+__all__ = ['Account', 'ProductKitLine', 'Template', 'Product']
 
 
 class Account:
     __name__ = 'analytic_account.account'
 
     kit_line = fields.Many2One('product.kit.line', 'Kit Line')
+    parent_kit_line = fields.Many2One('product.product', 'Parent Kit Line')
 
 
 class ProductKitLine:
@@ -41,15 +43,30 @@ class ProductKitLine:
         return product_kit_lines
 
     def get_missing_analytic_accounts(self):
-        existing = {a.parent for a in self.analytic_accounts}
-        accounts = {a for a in self.parent.template.analytic_accounts.accounts}
-        return [self.get_analytic_account(p) for p in accounts - existing]
+        res = []
+        template = self.parent.template
+        if not template.parent_analytic_account:
+            return res
+        parents = [template.parent_analytic_account]
+        if template.create_analytic_by_reference:
+            if not self.parent.parent_analytic_accounts:
+                parent = self.get_analytic_account(
+                    template.parent_analytic_account,
+                    name=self.parent.template.name)
+                parent.kit_line = None
+                parent.parent_kit_line = self.parent
+                parent.save()
+            parents = self.parent.parent_analytic_accounts
+        return [self.get_analytic_account(p) for p in parents]
 
-    def get_analytic_account(self, parent):
+    def get_analytic_account(self, parent, name=None):
         pool = Pool()
         AnalyticAccount = pool.get('analytic_account.account')
         account = AnalyticAccount()
-        account.name = self.product.template.name
+        if name is None:
+            account.name = self.product.template.name
+        else:
+            account.name = name
         account.parent = parent
         account.root = parent.root
         account.type = 'normal'
@@ -108,3 +125,56 @@ class ProductKitLine:
             }
             values.append(value)
         return values
+
+
+class Template:
+    __name__ = 'product.template'
+
+    parent_analytic_account = fields.Many2One('analytic_account.account',
+        'Parent Analytic Account')
+    create_analytic_by_reference = fields.Boolean(
+        'Create Analytic By Reference', help=('If marked an analytic account'
+            ' will be created for the parent product of the kit'))
+
+    @staticmethod
+    def default_create_analytic_by_reference():
+        return True
+
+    @classmethod
+    def __setup__(cls):
+        super(Template, cls).__setup__()
+        if 'parent_analytic_account' not in cls.analytic_accounts.depends:
+            states = cls.analytic_accounts.states
+            readonly = states.get('readonly', False)
+            cls.analytic_accounts.states.update({
+                    'readonly': (Bool(readonly) |
+                        ~Bool(Eval('parent_analytic_account'))),
+                    })
+            cls.analytic_accounts.depends.append('parent_analytic_account')
+
+
+class Product:
+    __name__ = 'product.product'
+
+    parent_analytic_accounts = fields.One2Many('analytic_account.account',
+        'parent_kit_line', 'Analytic Accounts')
+    analytic_configured = fields.Function(fields.Boolean(
+            'Analytic Configured'),
+        'on_change_with_analytic_configured')
+
+    @classmethod
+    def __setup__(cls):
+        super(Product, cls).__setup__()
+        if (hasattr(cls, 'kit_lines') and
+                'analytic_configured' not in cls.kit_lines.depends):
+            states = cls.kit_lines.states
+            invisible = states.get('invisible')
+            cls.kit_lines.states.update({
+                    'invisible': invisible | ~Eval('analytic_configured'),
+                    })
+            cls.kit_lines.depends.append('analytic_configured')
+
+    def on_change_with_analytic_configured(self, name=None):
+        if self.template and self.template.parent_analytic_account:
+            return True
+        return False

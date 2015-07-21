@@ -1,6 +1,6 @@
-=================================
-Analytic Product Account Scenario
-=================================
+==============================
+Analytic Product Work Scenario
+==============================
 
 =============
 General Setup
@@ -19,11 +19,12 @@ Create database::
     >>> config = config.set_trytond()
     >>> config.pool.test = True
 
-Install stock_reservation Module::
+Install modules::
 
     >>> Module = Model.get('ir.module.module')
     >>> modules = Module.find([
-    ...     ('name', 'in', ['analytic_product_account'])])
+    ...     ('name', 'in', ['analytic_product_account',
+    ...             'analytic_product_work'])])
     >>> Module.install([x.id for x in modules], config.context)
     >>> Wizard('ir.module.module.install_upgrade').execute('upgrade')
 
@@ -195,95 +196,10 @@ Make a kit from parent product and check that analytic accounts are created::
     u'Component A'
     >>> account_b.name
     u'Component B'
-    >>> account_a.parent.name
-    u'Analytic'
-    >>> account_b.parent.name
-    u'Analytic'
-
-If we delete some component analytic account is also deleted::
-
-    >>> _, to_remove = product.kit_lines
-    >>> product.kit_lines.remove(to_remove)
-    >>> product.save()
-    >>> analytic_account.reload()
-    >>> account_a, = analytic_account.childs
-    >>> account_a.name
-    u'Component A'
-
-Components can't be deleted if exists entries on their analytic accounts::
-
-    >>> Party = Model.get('party.party')
-    >>> Journal = Model.get('account.journal')
-    >>> Move = Model.get('account.move')
-    >>> customer = Party(name='Customer')
-    >>> customer.save()
-    >>> journal_revenue, = Journal.find([
-    ...         ('code', '=', 'REV'),
-    ...         ])
-    >>> journal_cash, = Journal.find([
-    ...         ('code', '=', 'CASH'),
-    ...         ])
-    >>> move = Move()
-    >>> move.period = period
-    >>> move.journal = journal_revenue
-    >>> move.date = period.start_date
-    >>> line = move.lines.new()
-    >>> line.account = revenue
-    >>> line.credit = Decimal(42)
-    >>> analytic_line = line.analytic_lines.new()
-    >>> analytic_line.journal = journal_revenue
-    >>> analytic_line.name = 'Analytic Line'
-    >>> analytic_line.credit = line.credit
-    >>> analytic_line.account = account_a
-    >>> line = move.lines.new()
-    >>> line.account = receivable
-    >>> line.debit = Decimal(42)
-    >>> line.party = customer
-    >>> move.click('post')
-    >>> account_a.reload()
-    >>> account_a.credit
-    Decimal('42.00')
-    >>> to_remove, = product.kit_lines
-    >>> product.kit_lines.remove(to_remove)
-    >>> product.save()
-    Traceback (most recent call last):
-        ...
-    UserError: ('UserError', (u'You cannot delete component "Component A" because it has associated costs.', ''))
-
-
-Create analytic accounts with reference::
-
-    >>> product = Product()
-    >>> template = ProductTemplate()
-    >>> template.name = 'Parent with reference'
-    >>> template.default_uom = unit
-    >>> template.type = 'service'
-    >>> template.purchasable = True
-    >>> template.salable = True
-    >>> template.list_price = Decimal('10')
-    >>> template.cost_price = Decimal('5')
-    >>> template.cost_price_method = 'fixed'
-    >>> template.account_expense = expense
-    >>> template.account_revenue = revenue
-    >>> template.parent_analytic_account = reference_analytic_account
-    >>> template.create_analytic_by_reference = True
-    >>> template.save()
-    >>> product.template = template
-    >>> product.kit = True
-    >>> product.save()
-    >>> kit_line = product.kit_lines.new()
-    >>> kit_line.product = component_a
-    >>> kit_line.quantity = 1
-    >>> kit_line = product.kit_lines.new()
-    >>> kit_line.product = component_b
-    >>> kit_line.quantity = 2
-    >>> product.save()
-    >>> reference_analytic_account.reload()
-    >>> intermediate_account, = reference_analytic_account.childs
-    >>> intermediate_account.name
-    u'Parent with reference'
-    >>> account_a, account_b = intermediate_account.childs
-    >>> account_a.name
-    u'Component A'
-    >>> account_b.name
-    u'Component B'
+    >>> kit_component_a, kit_component_b = product.kit_lines
+    >>> component_a_work, = kit_component_a.product.works
+    >>> component_b_work, = kit_component_b.product.works
+    >>> component_a_work.rec_name
+    u'Root\\Analytic\\Component A\\Component A'
+    >>> component_b_work.rec_name
+    u'Root\\Analytic\\Component B\\Component B'
